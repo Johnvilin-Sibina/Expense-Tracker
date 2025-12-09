@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/expense_model.dart';
 import 'package:flutter/material.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -29,7 +30,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         _selectedDate = pickedDate;
       });
     }
-    print("Selected Date $pickedDate");
   }
 
   void submitForm() {
@@ -37,7 +37,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       final enteredTitle = _titleController.text;
       final enteredAmount = double.parse(_amountController.text);
 
-      print("Title: $enteredTitle, Amount: $enteredAmount");
+      // print("Title: $enteredTitle, Amount: $enteredAmount");
+      final newExpense = ExpenseModel(title: enteredTitle, amount: enteredAmount, date: _selectedDate!);
+      Navigator.pop(context, newExpense);
     }
   }
 

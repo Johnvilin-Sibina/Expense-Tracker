@@ -1,23 +1,127 @@
+import 'package:expense_tracker/models/expense_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:hive/hive.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  //   List<ExpenseModel> expenses = [
+  //   ExpenseModel(title: "Groceries", amount: 50.0, date: DateTime.now()),
+  //   ExpenseModel(title: "Transport", amount: 20.0, date: DateTime.now()),
+  // ];
+
+
+  final expensesBox = Hive.box<ExpenseModel>('expensesBox');
+
+   List<ExpenseModel> get expenses {  
+    return expensesBox.values.toList();
+  }
+
+  final double totalAmount = 10000.0;
+  double get totalExpenses {
+    return expenses.fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  double get balance {
+    return totalAmount - totalExpenses;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(onPressed:   () {
-       Navigator.pushNamed(context, "/add-expense"); 
-      },
-      child: Icon(Icons.add),
-      backgroundColor: Colors.blue,
-      foregroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final newExpense =
+              await Navigator.pushNamed(context, "/add-expense")
+                  as ExpenseModel;
+          setState(() {
+            // expenses.add(newExpense);
+            expensesBox.add(newExpense);
+          });
+        },
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        child: Icon(Icons.add),
       ),
       appBar: AppBar(title: Text("Expense Tracker")),
-      body: ExpenseCard(
-        title: "Groceries",
-        date: "Sep 15, 2025",
-        amount: 250.00,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    text: "Total Amount: ",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(
+                        text: "Rs. ${totalAmount.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text.rich(
+                  TextSpan(
+                    text: "Your Expenses: ",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(
+                        text: "Rs. ${totalExpenses.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text.rich(
+                  TextSpan(
+                    text: "Balance: ",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(
+                        text: "Rs. ${balance.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: balance >= 0 ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: expenses.length,
+              itemBuilder: (context, index) {
+                final expense = expenses[index];
+                return ExpenseCard(
+                  title: expense.title,
+                  amount: expense.amount,
+                  date: expense.date,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -25,8 +129,12 @@ class HomeScreen extends StatelessWidget {
 
 class ExpenseCard extends StatelessWidget {
   final String title;
-  final String date;
+  final DateTime date;
   final double amount;
+
+  String get formattedDate {
+    return DateFormat("dd-MM-yyyy").format(date);
+  }
 
   const ExpenseCard({
     required this.title,
@@ -55,7 +163,7 @@ class ExpenseCard extends StatelessWidget {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  date,
+                  formattedDate,
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
