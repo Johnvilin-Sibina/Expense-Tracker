@@ -32,6 +32,35 @@ class _HomeScreenState extends State<HomeScreen> {
     return totalAmount - totalExpenses;
   }
 
+    void confirmDelete(int index) {
+    final expensesBox = Hive.box<ExpenseModel>('expensesBox');
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Expense'),
+          content: Text('Are you sure you want to delete this reccord?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {                
+                  expensesBox.deleteAt(index);
+                  setState(() {});
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: expense.title,
                   amount: expense.amount,
                   date: expense.date,
+                  onDelete: () => confirmDelete(index)
                 );
               },
             ),
@@ -131,17 +161,19 @@ class ExpenseCard extends StatelessWidget {
   final String title;
   final DateTime date;
   final double amount;
-
-  String get formattedDate {
-    return DateFormat("dd-MM-yyyy").format(date);
-  }
+  final VoidCallback onDelete;
 
   const ExpenseCard({
     required this.title,
     required this.date,
     required this.amount,
+    required this.onDelete,
     super.key,
   });
+
+  String get formattedDate {
+    return DateFormat("dd-MM-yyyy").format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +190,7 @@ class ExpenseCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  title.length > 15 ? "${title.substring(0, 10)}..." : title,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 SizedBox(height: 5),
@@ -183,9 +215,16 @@ class ExpenseCard extends StatelessWidget {
                 ),
               ),
             ),
+            Container(
+              padding: EdgeInsetsDirectional.only(start: 30),
+              child: IconButton(
+                onPressed: onDelete, 
+                icon:Icon(Icons.delete,color: Colors.red,)
+            ))
           ],
         ),
       ),
     );
   }
 }
+
