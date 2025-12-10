@@ -11,19 +11,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  //   List<ExpenseModel> expenses = [
-  //   ExpenseModel(title: "Groceries", amount: 50.0, date: DateTime.now()),
-  //   ExpenseModel(title: "Transport", amount: 20.0, date: DateTime.now()),
-  // ];
-
-
   final expensesBox = Hive.box<ExpenseModel>('expensesBox');
 
-   List<ExpenseModel> get expenses {  
+  List<ExpenseModel> get expenses {
     return expensesBox.values.toList();
   }
 
   final double totalAmount = 10000.0;
+
   double get totalExpenses {
     return expenses.fold(0.0, (sum, item) => sum + item.amount);
   }
@@ -32,26 +27,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return totalAmount - totalExpenses;
   }
 
-    void confirmDelete(int index) {
-    final expensesBox = Hive.box<ExpenseModel>('expensesBox');
+  void confirmDelete(int index) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Delete Expense'),
-          content: Text('Are you sure you want to delete this reccord?'),
+          content: Text('Are you sure you want to delete this record?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
+              onPressed: () => Navigator.pop(context),
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () async {                
-                  expensesBox.deleteAt(index);
-                  setState(() {});
-                Navigator.of(context).pop(); // Close the dialog
+              onPressed: () {
+                expensesBox.deleteAt(index);
+                setState(() {});
+                Navigator.pop(context);
               },
               child: Text('Delete', style: TextStyle(color: Colors.red)),
             ),
@@ -64,89 +57,68 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final newExpense =
-              await Navigator.pushNamed(context, "/add-expense")
-                  as ExpenseModel;
+          final newExpense = await Navigator.pushNamed(context, "/add-expense")
+              as ExpenseModel;
           setState(() {
-            // expenses.add(newExpense);
             expensesBox.add(newExpense);
           });
         },
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.indigo,
         child: Icon(Icons.add),
       ),
-      appBar: AppBar(title: Text("Expense Tracker")),
+
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text("Expense Tracker",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+
       body: Column(
         children: [
+          //---------------------------- Summary Card ------------------------------
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
+            margin: EdgeInsets.all(16),
+            padding: EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text.rich(
-                  TextSpan(
-                    text: "Total Amount: ",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    children: [
-                      TextSpan(
-                        text: "Rs. ${totalAmount.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text.rich(
-                  TextSpan(
-                    text: "Your Expenses: ",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    children: [
-                      TextSpan(
-                        text: "Rs. ${totalExpenses.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text.rich(
-                  TextSpan(
-                    text: "Balance: ",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    children: [
-                      TextSpan(
-                        text: "Rs. ${balance.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                          color: balance >= 0 ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
+                summaryLine("Total Amount", "Rs. ${totalAmount.toStringAsFixed(2)}", Colors.black),
+                summaryLine("Your Expenses", "Rs. ${totalExpenses.toStringAsFixed(2)}", Colors.red),
+                summaryLine(
+                  "Balance",
+                  "Rs. ${balance.toStringAsFixed(2)}",
+                  balance >= 0 ? Colors.green : Colors.red,
                 ),
               ],
             ),
           ),
+
+          //-------------------------- Expense List -------------------------------
           Expanded(
             child: ListView.builder(
               itemCount: expenses.length,
               itemBuilder: (context, index) {
-                final expense = expenses[index];
+                final e = expenses[index];
                 return ExpenseCard(
-                  title: expense.title,
-                  amount: expense.amount,
-                  date: expense.date,
-                  onDelete: () => confirmDelete(index)
+                  title: e.title,
+                  amount: e.amount,
+                  date: e.date,
+                  onDelete: () => confirmDelete(index),
                 );
               },
             ),
@@ -155,7 +127,25 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  // Helper widget for summary section
+  Widget summaryLine(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          Text(value,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
 }
+
+// -------------------------- Expense Card ------------------------------
 
 class ExpenseCard extends StatelessWidget {
   final String title;
@@ -171,60 +161,59 @@ class ExpenseCard extends StatelessWidget {
     super.key,
   });
 
-  String get formattedDate {
-    return DateFormat("dd-MM-yyyy").format(date);
-  }
+  String get formattedDate => DateFormat("dd-MM-yyyy").format(date);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 5,
-      margin: EdgeInsets.all(30.0),
-      child: Padding(
-        padding: EdgeInsets.all(12.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title.length > 15 ? "${title.substring(0, 10)}..." : title,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  formattedDate,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-              ],
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 6, offset: Offset(0, 4))
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Title + Date
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              Text(formattedDate,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            ],
+          ),
+
+          // Amount Badge
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.indigo),
             ),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-              child: Text(
-                amount.toStringAsFixed(2),
-                style: TextStyle(
+            child: Text(
+              amount.toStringAsFixed(2),
+              style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.blue,
-                ),
-              ),
+                  color: Colors.indigo),
             ),
-            Container(
-              padding: EdgeInsetsDirectional.only(start: 30),
-              child: IconButton(
-                onPressed: onDelete, 
-                icon:Icon(Icons.delete,color: Colors.red,)
-            ))
-          ],
-        ),
+          ),
+
+          // Delete Button
+          IconButton(
+            onPressed: onDelete,
+            icon: Icon(Icons.delete, color: Colors.red),
+          )
+        ],
       ),
     );
   }
 }
-
