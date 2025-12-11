@@ -14,8 +14,28 @@ class _HomeScreenState extends State<HomeScreen> {
   final expensesBox = Hive.box<ExpenseModel>('expensesBox');
   final settingsBox = Hive.box('settingsBox');
 
+   // Category List for filtering
+  final List<String> _categories = [
+    "All",
+    "Food",
+    "Travel",
+    "Shopping",
+    "Bills",
+    "Health",
+    "Entertainment",
+    "Other",
+  ];
+
+  String _selectedFilter = "All";
+
   List<ExpenseModel> get expenses {
-    return expensesBox.values.toList();
+     if (_selectedFilter == "All") {
+      return expensesBox.values.toList();
+    } else {
+      return expensesBox.values
+          .where((e) => e.category == _selectedFilter)
+          .toList();
+    }
   }
 
   double get totalAmount {
@@ -180,6 +200,31 @@ void showTotalAmountDialog({bool isEdit = false}) {
               ],
             ),
           ),
+
+          // Category Filter Dropdown
+           Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedFilter,
+              decoration: InputDecoration(
+                labelText: "Filter by Category",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              items: _categories.map((cat) {
+                return DropdownMenuItem(value: cat, child: Text(cat));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedFilter = value!;
+                });
+              },
+            ),
+          ),
+
+          SizedBox(height: 10),
+
 
           // Expense List 
           Expanded(
