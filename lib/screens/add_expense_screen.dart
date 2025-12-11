@@ -9,6 +9,18 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
+  final List<String> _categories = [
+    "Food",
+    "Travel",
+    "Shopping",
+    "Bills",
+    "Health",
+    "Entertainment",
+    "Other",
+  ];
+
+  String? _selectedCategory;
+
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   DateTime? _selectedDate;
@@ -31,7 +43,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void submitForm() {
-    if ((_formKey.currentState?.validate() ?? false) && _selectedDate != null) {
+    if ((_formKey.currentState?.validate() ?? false) && _selectedDate != null && _selectedCategory != null) {
       final enteredTitle = _titleController.text;
       final enteredAmount = double.parse(_amountController.text);
 
@@ -39,6 +51,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         title: enteredTitle,
         amount: enteredAmount,
         date: _selectedDate!,
+        category: _selectedCategory!,
       );
       Navigator.pop(context, newExpense);
     }
@@ -50,20 +63,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _amountController.clear();
     setState(() {
       _selectedDate = null;
+      _selectedCategory = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Add Expense"),
-        elevation: 1,
-      ),
+      appBar: AppBar(title: const Text("Add Expense"), elevation: 1),
 
       body: Center(
         child: Container(
-          width: 450, // Good width for web & mobile
+          width: 450, 
           padding: const EdgeInsets.all(20),
 
           child: Card(
@@ -138,7 +149,33 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                     const SizedBox(height: 20),
 
-                    // DATE PICKER ROW
+                    // Category Dropdown
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: "Category",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      initialValue: _selectedCategory,
+                      items: _categories.map((cat) {
+                        return DropdownMenuItem(value: cat, child: Text(cat));
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please select a category";
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
+
+                    // Date Picker
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -163,7 +200,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                     const SizedBox(height: 30),
 
-                    // BUTTONS ROW
+                    // Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -199,7 +236,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           child: const Text("Reset"),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
