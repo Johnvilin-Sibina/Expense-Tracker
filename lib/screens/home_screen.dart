@@ -12,12 +12,22 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final expensesBox = Hive.box<ExpenseModel>('expensesBox');
+  final settingsBox = Hive.box('settingsBox');
 
   List<ExpenseModel> get expenses {
     return expensesBox.values.toList();
   }
 
-  final double totalAmount = 10000.0;
+  double get totalAmount {
+  return settingsBox.get('totalAmount', defaultValue: 0.0);
+}
+
+  // final double totalAmount = 10000.0;
+
+void setTotalAmount(double amount) {
+  settingsBox.put('totalAmount', amount);
+  setState(() {});
+}
 
   double get totalExpenses {
     return expenses.fold(0.0, (sum, item) => sum + item.amount);
@@ -25,6 +35,46 @@ class _HomeScreenState extends State<HomeScreen> {
 
   double get balance {
     return totalAmount - totalExpenses;
+  }
+void showTotalAmountDialog({bool isEdit = false}) {
+    final controller = TextEditingController(
+      text: isEdit ? totalAmount.toString() : "",
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text(isEdit ? "Edit Total Amount" : "Set Total Amount"),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Enter Total Amount",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final amount = double.tryParse(controller.text);
+
+                if (amount != null && amount > 0) {
+                  setTotalAmount(amount);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text(isEdit ? "Update" : "Save"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void confirmDelete(int index) {
@@ -98,6 +148,28 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                // Buttons row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => showTotalAmountDialog(isEdit: false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text("Set Total"),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => showTotalAmountDialog(isEdit: true),
+                      child: Text("Edit Total"),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 15),
+
                 summaryLine("Total Amount", "Rs. ${totalAmount.toStringAsFixed(2)}", Colors.black),
                 summaryLine("Your Expenses", "Rs. ${totalExpenses.toStringAsFixed(2)}", Colors.red),
                 summaryLine(

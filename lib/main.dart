@@ -11,6 +11,7 @@ Future<void> main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(ExpenseModelAdapter());
   await Hive.openBox<ExpenseModel>('expensesBox');
+  await Hive.openBox('settingsBox');
   runApp(const ExpenseApp());
 }
 
